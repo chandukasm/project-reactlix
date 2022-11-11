@@ -1,91 +1,116 @@
+import { useEffect, useState } from 'react';
 import { fetchGenres, fetchMovies } from './api'; // you may add functionality to these functions, but please use them
+import GenreBox from './components/GenreBox';
+import MovieCard from './components/MovieCard';
 import './styles.css'; // have a look at this file and feel free to use the classes
 
 export default function App() {
+  const [movies, setMovies] = useState([]);
+  const [genres, setGenres] = useState([]);
+  const [checked, setChecked] = useState([]);
+
+  useEffect(() => {
+    getData();
+  }, []);
+
+  const getData = async () => {
+    const res = await fetchMovies();
+    const movies = await res.json();
+    const resp = await fetchGenres();
+    const genres = await resp.json();
+    setGenres(genres);
+    setMovies(movies);
+  };
+
+  const IsGenreIn = (genre_ids) => {
+    //checking whether the movie has selected genres
+    let shouldDispaly = false;
+    genre_ids.map((id) => {
+      if (checked.includes(id)) {
+        shouldDispaly = true;
+      }
+    });
+    return shouldDispaly;
+  };
+
+  // displaying movies
+  const displayMovies = () => {
+    if (checked.length == 0) {
+      //displaying all if checked array doesnt have any movies
+      return movies.map((movie) => (
+        <MovieCard
+          key={movie.id}
+          movie={movie}
+          genres={movie.genre_ids.map(
+            (id) => genres.filter((genre) => genre.id === id)[0].name
+          )}
+        />
+      ));
+    } else {
+      return movies.map(
+        (movie) =>
+          IsGenreIn(movie.genre_ids) && (
+            <MovieCard
+              movie={movie}
+              genres={movie.genre_ids.map(
+                (id) => genres.filter((genre) => genre.id === id)[0].name
+              )}
+            />
+          )
+      );
+    }
+  };
+
+  // checkbox functionality handling
+  const handleCheck = (genreId) => {
+    if (checked.includes(genreId)) {
+      return setChecked(checked.filter((id) => id !== genreId));
+    }
+    setChecked([...checked, genreId]);
+  };
+
+  // displaying the genres
+  const displayGenres = () => {
+    //checking genres are fetched
+    if (genres.length > 0) {
+      return (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+          }}
+        >
+          {genres.map((genre) => (
+            <GenreBox
+              key={genre.id}
+              genre={genre}
+              onCheck={() => handleCheck(genre.id)}
+              checked={checked.includes(genre.id)}
+            />
+          ))}
+          <button onClick={() => setChecked([])}>reset</button>
+        </div>
+      );
+    } else {
+      return <h1>Loading...</h1>;
+    }
+  };
+
   return (
     <div>
-      <h1>
-        <span>
-          <span role="img" aria-label="Popcorn emoji">
-            🍿
-          </span>{' '}
-          Now playing
-        </span>
-      </h1>
-      <div>
-        <div>Showing 12 movies</div>
-        <div>
-          <h2>Wonder Woman 1984</h2>
-          <p>
-            Wonder Woman comes into conflict with the Soviet Union during the
-            Cold War in the 1980s and finds a formidable foe by the name of the
-            Cheetah.
-          </p>
-          <p>Rating: 7/10</p>
-          <p>Popularity: 2407.318</p>
-        </div>
-        <div>
-          <h2>The Little Things</h2>
-          <p>
-            Deputy Sheriff Joe "Deke" Deacon joins forces with Sgt. Jim Baxter
-            to search for a serial killer who's terrorizing Los Angeles. As they
-            track the culprit, Baxter is unaware that the investigation is
-            dredging up echoes of Deke's past, uncovering disturbing secrets
-            that could threaten more than his case.
-          </p>
-          <p>Rating: 6.4/10</p>
-          <p>Popularity: 2119.969</p>
-        </div>
-        <div>
-          <h2>急先锋</h2>
-          <p>
-            Covert security company Vanguard is the last hope of survival for an
-            accountant after he is targeted by the world's deadliest mercenary
-            organization.
-          </p>
-          <p>Rating: 6.6/10</p>
-          <p>Popularity: 1362.714</p>
-        </div>
-        <div>
-          <h2>Breach</h2>
-          <p>
-            A hardened mechanic must stay awake and maintain an interstellar ark
-            fleeing the dying planet Earth with a few thousand lucky souls on
-            board... the last of humanity. Unfortunately, humans are not the
-            only passengers. A shapeshifting alien creature has taken residence,
-            its only goal is to kill as many people as possible. The crew must
-            think quickly to stop this menace before it destroys mankind.
-          </p>
-          <p>Rating: 4.7/10</p>
-          <p>Popularity: 1267.391</p>
-        </div>
-        <div>
-          <h2>Soul</h2>
-          <p>
-            Joe Gardner is a middle school teacher with a love for jazz music.
-            After a successful gig at the Half Note Club, he suddenly gets into
-            an accident that separates his soul from his body and is transported
-            to the You Seminar, a center in which souls develop and gain
-            passions before being transported to a newborn child. Joe must
-            enlist help from the other souls-in-training, like 22, a soul who
-            has spent eons in the You Seminar, in order to get back to Earth.
-          </p>
-          <p>Rating: 8.3/10</p>
-          <p>Popularity: 1175.056</p>
-        </div>
-        <div>
-          <h2>100% Wolf</h2>
-          <p>
-            Freddy Lupin, heir to a proud family line of werewolves, is in for a
-            shock when on his 14th birthday his first 'warfing' goes awry,
-            turning him into a ferocious poodle. The pack elders give Freddy
-            until the next moonrise to prove he has the heart of a wolf, or risk
-            being cast out forever. With the help of an unlikely ally in a
-            streetwise stray named Batty, Freddy must prove he's 100% Wolf.
-          </p>
-          <p>Rating: 6.1/10</p>
-          <p>Popularity: 737.271</p>
-        </div>
+      <h3>Reactlix</h3>
+      {displayGenres()}
+      <div
+        style={{
+          marginTop: 20,
+          display: 'flex',
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+        }}
+      >
+        {displayMovies()}
       </div>
     </div>
   );
